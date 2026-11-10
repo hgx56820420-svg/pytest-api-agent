@@ -35,6 +35,9 @@ SPEC = {
 }
 
 
+KEY = "shop.openapi:GET /api/orders/{order_id}"
+
+
 @pytest.fixture
 def validator(tmp_path):
     path = tmp_path / "shop.openapi.json"
@@ -56,9 +59,9 @@ def _response(status: int, body) -> requests.Response:
 
 
 def test_matching_response_passes(validator):
-    # check() 不抛异常就表示符合契约
-    assert validator.check("GET", "/api/orders/1", _response(200, {"id": 1, "amount": 9.5})) is None
-    assert validator.check("GET", "/api/orders/1", _response(404, {"detail": "Order not found"})) is None
+    # check() 不抛异常就表示符合契约，返回值是接口标识
+    assert validator.check("GET", "/api/orders/1", _response(200, {"id": 1, "amount": 9.5})) == KEY
+    assert validator.check("GET", "/api/orders/1", _response(404, {"detail": "Order not found"})) == KEY
 
 
 def test_undocumented_status_code_fails(validator):
@@ -79,3 +82,8 @@ def test_undocumented_extra_field_fails(validator):
 def test_unknown_operation_fails(validator):
     with pytest.raises(ContractViolation, match="not in contract"):
         validator.check("DELETE", "/api/orders/1", _response(200, {}))
+
+
+def test_operation_key_maps_concrete_path_to_template(validator):
+    assert validator.operation_key("get", "/api/orders/42?x=1") == KEY
+    assert validator.operation_key("DELETE", "/api/orders/42") is None

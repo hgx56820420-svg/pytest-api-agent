@@ -20,6 +20,7 @@ def redact(value: Any) -> Any:
 class Recorder:
     def __init__(self) -> None:
         self.entries: list[dict[str, Any]] = []
+        self.operations: list[str] = []  # 本条测试请求过的接口，用来统计接口执行率
 
     def http(self, *, request_id: str, method: str, path: str, params: Any, body: Any, response) -> None:
         try:

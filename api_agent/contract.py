@@ -26,7 +26,8 @@ class ContractValidator:
         self.raw = json.loads(self.path.read_text(encoding="utf-8"))
         self.schema = schemathesis.openapi.from_dict(self.raw)
 
-    def check(self, method: str, path: str, response) -> None:
+    def check(self, method: str, path: str, response) -> str:
+        """校验一个响应，返回接口标识 "<契约文件名>:METHOD /path模板"，用来统计接口执行率。"""
         operation = self.schema.find_operation_by_path(method.upper(), path.split("?")[0])
         if operation is None:
             raise ContractViolation(f"{method} {path} is not in contract {self.path.name}")
@@ -46,6 +47,12 @@ class ContractValidator:
             extra = self._extra_fields(response.json(), body_schema, "$")
             if extra:
                 raise ContractViolation(f"{label} {status} returned fields not in contract: {', '.join(extra)}")
+        return f"{self.path.stem}:{label}"
+
+    def operation_key(self, method: str, path: str) -> str | None:
+        """请求对应的接口标识 \"<契约文件名>:METHOD /path模板\"；契约里没有这个接口时返回 None。"""
+        operation = self.schema.find_operation_by_path(method.upper(), path.split("?")[0])
+        return None if operation is None else f"{self.path.stem}:{method.upper()} {operation.path}"
 
     def _resolve(self, schema: dict) -> dict:
         while "$ref" in schema:

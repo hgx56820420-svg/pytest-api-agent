@@ -46,6 +46,17 @@ def test_stock_boundary(api, db):
 
 测试失败时，证据写入 `artifacts/evidence/<测试名>.json`，同时附在 pytest 报告的 `api evidence` 段，密码、token 等字段替换为 `***`。每次运行结束写出 `case-results.json`（用例编号 → passed / failed / skipped）。
 
+## 接口执行率
+
+配置了 `--api-contract` 后，每次运行结束会在证据目录写出 `operations.json`：每个接口被请求几次、几条测试通过、几条失败。用脚本对照契约算执行率：
+
+```bash
+python scripts/operation_coverage.py contracts/a.openapi.json contracts/b.openapi.json \
+    --operations artifacts/evidence/operations.json --list-missing
+```
+
+口径：**执行** = 至少请求过 1 次；**通过** = 至少有 1 条通过的测试请求过它；**仅失败** = 请求过但请求过它的测试全部失败。执行率只说明接口被调用过，不说明断言够强，断言质量看 `check_tests.py` 和变异测试。
+
 ## 需求驱动的测试设计
 
 `skill/api-test-design/SKILL.md` 引导 Agent 按四个阶段产出 `cases/<service>.yaml`：

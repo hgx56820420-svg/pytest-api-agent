@@ -14,6 +14,7 @@ from api_agent.evidence import Recorder
 
 _recorder_key = pytest.StashKey[Recorder]()
 _case_results_key = pytest.StashKey[dict]()
+_operations_key = pytest.StashKey[dict]()
 _MARKER = ".api-agent-evidence"
 
 
@@ -47,6 +48,7 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     config.addinivalue_line("markers", "case(id): 关联测试用例编号，例如 @pytest.mark.case('TC-ORDER-001')")
     config.stash[_case_results_key] = {}
+    config.stash[_operations_key] = {}
 
 
 @pytest.fixture(scope="session")
@@ -129,6 +131,13 @@ def pytest_runtest_makereport(item, call):
             if results.get(case_id) != "failed":
                 results[case_id] = report.outcome
     recorder = item.stash.get(_recorder_key, None)
+    if report.when == "call" and recorder is not None:
+        stats = item.config.stash[_operations_key]
+        for key in recorder.operations:
+            entry = stats.setdefault(key, {"requests": 0, "tests_passed": 0, "tests_failed": 0})
+            entry["requests"] += 1
+        for key in set(recorder.operations):
+            stats[key]["tests_passed" if report.passed else "tests_failed"] += 1
     if report.failed and recorder is not None and recorder.entries:
         evidence = {"test": item.nodeid, "cases": _case_ids(item), "entries": recorder.entries}
         text = json.dumps(evidence, ensure_ascii=False, indent=2, default=str)
@@ -139,7 +148,12 @@ def pytest_runtest_makereport(item, call):
 
 def pytest_sessionfinish(session):
     results = session.config.stash.get(_case_results_key, {})
-    if not results:
+    operations = session.config.stash.get(_operations_key, {})
+    if not results and not operations:
         return
     out_dir = _evidence_dir(session.config)
+    if operations:
+        (out_dir / "operations.json").write_text(json.dumps(operations, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+    if not results:
+        return
     (out_dir / "case-results.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")

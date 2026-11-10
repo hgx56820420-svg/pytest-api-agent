@@ -1,4 +1,4 @@
-"""测试质量静态检查：拦住"看起来在测、其实没在测"的测试。不运行测试，只读代码。
+﻿"""测试质量静态检查：拦住"看起来在测、其实没在测"的测试。不运行测试，只读代码。
 
 用法（项目根目录下）：
     python scripts/check_tests.py            # 检查本仓库 tests/ 下所有 test_*.py
@@ -117,7 +117,7 @@ def check_function(func: ast.FunctionDef, dims: dict[str, set[str]]) -> tuple[li
 def check_file(path: Path, dims: dict[str, set[str]]) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
     name = path.resolve().relative_to(ROOT).as_posix() if path.resolve().is_relative_to(ROOT) else path.as_posix()
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"):

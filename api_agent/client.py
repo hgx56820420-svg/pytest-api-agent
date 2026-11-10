@@ -86,8 +86,12 @@ class ApiClient:
             allow_redirects=False,
         )
         self.recorder.http(request_id=request_id, method=method, path=path, params=params, body=json, response=response)
-        if self.contract is not None and check_contract:
-            self.contract.check(method, path, response)
+        if self.contract is not None:
+            key = self.contract.operation_key(method, path)
+            if key:
+                self.recorder.operations.append(key)
+            if check_contract:
+                self.contract.check(method, path, response)
         return response
 
     def get(self, path: str, **kwargs) -> requests.Response:
