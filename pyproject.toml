@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytest-api-agent"
+version = "0.2.0"
+description = "pytest plugin for API business tests: database evidence, response contract validation, requirement-driven test design checks"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = ["pytest>=8", "requests>=2.31", "SQLAlchemy>=2.0"]
+
+[project.optional-dependencies]
+# --api-contract：每个响应按 OpenAPI 基线校验
+contract = ["schemathesis>=4.33"]
+# scripts/check_cases.py、scripts/check_tests.py 读取 YAML
+tools = ["PyYAML>=6"]
+dev = ["schemathesis>=4.33", "PyYAML>=6"]
+
+[project.entry-points.pytest11]
+api_agent = "api_agent.plugin"
+
+[tool.setuptools]
+packages = ["api_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
